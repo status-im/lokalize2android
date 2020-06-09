@@ -122,11 +122,6 @@ func processTranslation(v string) string {
 	return b.String()
 }
 
-func usage() {
-	fmt.Fprintf(os.Stderr, "usage: translate <json file>\n")
-	os.Exit(1)
-}
-
 func main() {
 	var r io.Reader
 	{
