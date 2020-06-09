@@ -1,11 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"strings"
 	"text/scanner"
@@ -127,24 +128,32 @@ func usage() {
 }
 
 func main() {
-	if len(os.Args) < 2 {
-		usage()
-	}
-	b, err := ioutil.ReadFile(os.Args[1])
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error reading file: %q", err)
-		os.Exit(1)
-	}
-	l := &Resources{}
-	if err = json.Unmarshal(b, l); err != nil {
-		fmt.Fprintf(os.Stderr, "error parsing json: %q", err)
-		os.Exit(1)
+	var r io.Reader
+	{
+		if len(os.Args) == 2 {
+			f, err := os.Open(os.Args[1])
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "error reading file: %q", err)
+				os.Exit(1)
+			}
+			r = f
+		} else {
+			r = bufio.NewReader(os.Stdin)
+		}
 	}
 
-	b, err = xml.MarshalIndent(l, "", "\t")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error serializing xml: %q", err)
-		os.Exit(1)
+	var rs Resources
+	{
+		if err := json.NewDecoder(r).Decode(&rs); err != nil {
+			fmt.Fprintf(os.Stderr, "error parsing json: %q", err)
+			os.Exit(1)
+		}
+
+		b, err := xml.MarshalIndent(rs, "", "\t")
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error serializing xml: %q", err)
+			os.Exit(1)
+		}
+		fmt.Println(string(b))
 	}
-	fmt.Println(string(b))
 }
