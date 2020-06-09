@@ -131,6 +131,10 @@ func main() {
 		usage()
 	}
 	b, err := ioutil.ReadFile(os.Args[1])
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error reading file: %q", err)
+		os.Exit(1)
+	}
 	l := &Resources{}
 	if err = json.Unmarshal(b, l); err != nil {
 		fmt.Fprintf(os.Stderr, "error parsing json: %q", err)
