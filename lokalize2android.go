@@ -124,31 +124,27 @@ func processTranslation(v string) string {
 
 func main() {
 	var r io.Reader
-	{
-		if len(os.Args) == 2 {
-			f, err := os.Open(os.Args[1])
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "error reading file: %q", err)
-				os.Exit(1)
-			}
-			r = f
-		} else {
-			r = bufio.NewReader(os.Stdin)
+	if len(os.Args) == 2 {
+		f, err := os.Open(os.Args[1])
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error reading file: %q", err)
+			os.Exit(1)
 		}
+		r = f
+	} else {
+		r = bufio.NewReader(os.Stdin)
 	}
 
 	var rs Resources
-	{
-		if err := json.NewDecoder(r).Decode(&rs); err != nil {
-			fmt.Fprintf(os.Stderr, "error parsing json: %q", err)
-			os.Exit(1)
-		}
-
-		b, err := xml.MarshalIndent(rs, "", "\t")
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "error serializing xml: %q", err)
-			os.Exit(1)
-		}
-		fmt.Println(string(b))
+	if err := json.NewDecoder(r).Decode(&rs); err != nil {
+		fmt.Fprintf(os.Stderr, "error parsing json: %q", err)
+		os.Exit(1)
 	}
+
+	b, err := xml.MarshalIndent(rs, "", "\t")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error serializing xml: %q", err)
+		os.Exit(1)
+	}
+	fmt.Println(string(b))
 }
