@@ -88,27 +88,28 @@ func processTranslation(v string) string {
 		ph bytes.Buffer
 	)
 
-	// TODO(andremedeiros): can this be done better?
-	v = strings.ReplaceAll(v, "{{", "{")
-	v = strings.ReplaceAll(v, "}}", "}")
-
 	s.Init(strings.NewReader(v))
 	s.Filename = "translation"
 	s.Whitespace = 0
 	s.Mode = scanner.ScanStrings
-	s.IsIdentRune = func(ch rune, i int) bool {
-		return ch == '{' || ch == '}'
-	}
 
 	insideph := false
+	lastOpen := -1
+	lastClosed := -1
 	for tok := s.Scan(); tok != scanner.EOF; tok = s.Scan() {
 		switch tok {
 		case '{':
-			insideph = true
+			if 1 == s.Pos().Column - lastOpen{
+				insideph = true
+			}
+			lastOpen = s.Pos().Column
 		case '}':
-			b.WriteString(fmt.Sprintf(`<xliff:g id="%s" />`, ph.String()))
-			ph.Reset()
-			insideph = false
+			if 1 == s.Pos().Column - lastClosed {
+				b.WriteString(fmt.Sprintf(`<xliff:g id="%s" />`, ph.String()))
+				ph.Reset()
+				insideph = false
+			}
+			lastClosed = s.Pos().Column
 		default:
 			if !insideph {
 				b.WriteRune(tok)
