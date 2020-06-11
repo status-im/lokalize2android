@@ -7,6 +7,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"strings"
 	"text/scanner"
@@ -51,21 +52,18 @@ func (l *Resources) UnmarshalJSON(b []byte) error {
 	for k, v := range ts {
 		switch v.(type) {
 		case string:
-			v := v.(string)
-			str := String{Name: processKey(k), Value: processTranslation(v)}
+			str := String{Name: processKey(k), Value: processTranslation(v.(string))}
 			l.Strings = append(l.Strings, str)
 		case []interface{}:
-			v := v.([]interface{})
 			strs := StringArray{Name: processKey(k)}
-			for _, str := range v {
+			for _, str := range v.([]interface{}) {
 				strs.Items = append(strs.Items, processTranslation(str.(string)))
 			}
 			l.StringArrays = append(l.StringArrays, strs)
 		case map[string]interface{}:
-			v := v.(map[string]interface{})
 			pl := Plurals{Name: processKey(k)}
 			for _, pt := range pluralTypes {
-				if str, ok := v[pt]; ok {
+				if str, ok := v.(map[string]interface{})[pt]; ok {
 					pl.Items = append(pl.Items, PluralItem{Quantity: pt, Value: processTranslation(str.(string))})
 				}
 			}
@@ -90,27 +88,28 @@ func processTranslation(v string) string {
 		ph bytes.Buffer
 	)
 
-	// TODO(andremedeiros): can this be done better?
-	v = strings.ReplaceAll(v, "{{", "{")
-	v = strings.ReplaceAll(v, "}}", "}")
-
 	s.Init(strings.NewReader(v))
 	s.Filename = "translation"
 	s.Whitespace = 0
 	s.Mode = scanner.ScanStrings
-	s.IsIdentRune = func(ch rune, i int) bool {
-		return ch == '{' || ch == '}'
-	}
 
 	insideph := false
+	lastOpen := -1
+	lastClosed := -1
 	for tok := s.Scan(); tok != scanner.EOF; tok = s.Scan() {
 		switch tok {
 		case '{':
-			insideph = true
+			if 1 == s.Pos().Column - lastOpen{
+				insideph = true
+			}
+			lastOpen = s.Pos().Column
 		case '}':
-			b.WriteString(fmt.Sprintf(`<xliff:g id="%s" />`, ph.String()))
-			ph.Reset()
-			insideph = false
+			if 1 == s.Pos().Column - lastClosed {
+				b.WriteString(fmt.Sprintf(`<xliff:g id="%s" />`, ph.String()))
+				ph.Reset()
+				insideph = false
+			}
+			lastClosed = s.Pos().Column
 		default:
 			if !insideph {
 				b.WriteRune(tok)
@@ -123,32 +122,35 @@ func processTranslation(v string) string {
 }
 
 func main() {
+	l := log.New(os.Stderr, "", log.Flags())
+
 	var r io.Reader
-	{
-		if len(os.Args) == 2 {
-			f, err := os.Open(os.Args[1])
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "error reading file: %q", err)
-				os.Exit(1)
-			}
-			r = f
-		} else {
-			r = bufio.NewReader(os.Stdin)
+	if len(os.Args) == 2 {
+		f, err := os.Open(os.Args[1])
+		if err != nil {
+			l.Fatalf("error reading file: %q", err)
 		}
+
+		defer func() {
+			err = f.Close()
+			if err != nil {
+				l.Fatalf("error closing file: %q", err)
+			}
+		}()
+
+		r = f
+	} else {
+		r = bufio.NewReader(os.Stdin)
 	}
 
 	var rs Resources
-	{
-		if err := json.NewDecoder(r).Decode(&rs); err != nil {
-			fmt.Fprintf(os.Stderr, "error parsing json: %q", err)
-			os.Exit(1)
-		}
-
-		b, err := xml.MarshalIndent(rs, "", "\t")
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "error serializing xml: %q", err)
-			os.Exit(1)
-		}
-		fmt.Println(string(b))
+	if err := json.NewDecoder(r).Decode(&rs); err != nil {
+		l.Fatalf("error parsing json: %q", err)
 	}
+
+	b, err := xml.MarshalIndent(rs, "", "\t")
+	if err != nil {
+		l.Fatalf("error serializing xml: %q", err)
+	}
+	fmt.Println(string(b))
 }
