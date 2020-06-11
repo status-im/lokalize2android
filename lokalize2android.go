@@ -52,21 +52,18 @@ func (l *Resources) UnmarshalJSON(b []byte) error {
 	for k, v := range ts {
 		switch v.(type) {
 		case string:
-			v := v.(string)
-			str := String{Name: processKey(k), Value: processTranslation(v)}
+			str := String{Name: processKey(k), Value: processTranslation(v.(string))}
 			l.Strings = append(l.Strings, str)
 		case []interface{}:
-			v := v.([]interface{})
 			strs := StringArray{Name: processKey(k)}
-			for _, str := range v {
+			for _, str := range v.([]interface{}) {
 				strs.Items = append(strs.Items, processTranslation(str.(string)))
 			}
 			l.StringArrays = append(l.StringArrays, strs)
 		case map[string]interface{}:
-			v := v.(map[string]interface{})
 			pl := Plurals{Name: processKey(k)}
 			for _, pt := range pluralTypes {
-				if str, ok := v[pt]; ok {
+				if str, ok := v.(map[string]interface{})[pt]; ok {
 					pl.Items = append(pl.Items, PluralItem{Quantity: pt, Value: processTranslation(str.(string))})
 				}
 			}
