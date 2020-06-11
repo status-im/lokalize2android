@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"github.com/duo-labs/webauthn.io/logger"
 	"io"
+	"log"
 	"os"
 	"strings"
 	"text/scanner"
@@ -121,20 +121,19 @@ func processTranslation(v string) string {
 }
 
 func main() {
-	log := logger.Logger
-	log.Out = os.Stderr
+	l := log.New(os.Stderr, "", log.Flags())
 
 	var r io.Reader
 	if len(os.Args) == 2 {
 		f, err := os.Open(os.Args[1])
 		if err != nil {
-			log.Fatalf("error reading file: %q", err)
+			l.Fatalf("error reading file: %q", err)
 		}
 
 		defer func() {
 			err = f.Close()
 			if err != nil {
-				log.Fatalf("error closing file: %q", err)
+				l.Fatalf("error closing file: %q", err)
 			}
 		}()
 
@@ -145,12 +144,12 @@ func main() {
 
 	var rs Resources
 	if err := json.NewDecoder(r).Decode(&rs); err != nil {
-		log.Fatalf("error parsing json: %q", err)
+		l.Fatalf("error parsing json: %q", err)
 	}
 
 	b, err := xml.MarshalIndent(rs, "", "\t")
 	if err != nil {
-		log.Fatalf("error serializing xml: %q", err)
+		l.Fatalf("error serializing xml: %q", err)
 	}
 	fmt.Println(string(b))
 }
