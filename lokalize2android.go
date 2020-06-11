@@ -133,6 +133,14 @@ func main() {
 		if err != nil {
 			log.Fatalf("error reading file: %q", err)
 		}
+
+		defer func() {
+			err = f.Close()
+			if err != nil {
+				log.Fatalf("error closing file: %q", err)
+			}
+		}()
+
 		r = f
 	} else {
 		r = bufio.NewReader(os.Stdin)
