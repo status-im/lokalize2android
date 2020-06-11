@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"github.com/duo-labs/webauthn.io/logger"
 	"io"
 	"os"
 	"strings"
@@ -123,11 +124,14 @@ func processTranslation(v string) string {
 }
 
 func main() {
+	log := logger.Logger
+	log.Out = os.Stderr
+
 	var r io.Reader
 	if len(os.Args) == 2 {
 		f, err := os.Open(os.Args[1])
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "error reading file: %q", err)
+			log.Errorf("error reading file: %q", err)
 			os.Exit(1)
 		}
 		r = f
@@ -137,13 +141,13 @@ func main() {
 
 	var rs Resources
 	if err := json.NewDecoder(r).Decode(&rs); err != nil {
-		fmt.Fprintf(os.Stderr, "error parsing json: %q", err)
+		log.Errorf("error parsing json: %q", err)
 		os.Exit(1)
 	}
 
 	b, err := xml.MarshalIndent(rs, "", "\t")
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error serializing xml: %q", err)
+		log.Errorf("error serializing xml: %q", err)
 		os.Exit(1)
 	}
 	fmt.Println(string(b))
