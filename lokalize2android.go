@@ -131,8 +131,7 @@ func main() {
 	if len(os.Args) == 2 {
 		f, err := os.Open(os.Args[1])
 		if err != nil {
-			log.Errorf("error reading file: %q", err)
-			os.Exit(1)
+			log.Fatalf("error reading file: %q", err)
 		}
 		r = f
 	} else {
@@ -141,14 +140,12 @@ func main() {
 
 	var rs Resources
 	if err := json.NewDecoder(r).Decode(&rs); err != nil {
-		log.Errorf("error parsing json: %q", err)
-		os.Exit(1)
+		log.Fatalf("error parsing json: %q", err)
 	}
 
 	b, err := xml.MarshalIndent(rs, "", "\t")
 	if err != nil {
-		log.Errorf("error serializing xml: %q", err)
-		os.Exit(1)
+		log.Fatalf("error serializing xml: %q", err)
 	}
 	fmt.Println(string(b))
 }
